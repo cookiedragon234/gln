@@ -25,7 +25,6 @@ import glm_.vec4.Vec4ui
 import gln.*
 import gln.program.ProgramBase
 import gln.program.ProgramUse
-import gln.program.glDeleteProgram
 import kool.ByteBuffer
 import kool.adr
 import kool.rem
@@ -43,7 +42,7 @@ inline class GlProgram(val name: Int) {
 
     infix fun attach(shader: GlShader) = GL20C.glAttachShader(name, shader.name)
 
-    operator fun plusAssign(shader: GlShader) = GL20C.glAttachShader(name, shader.name)
+    infix operator fun plusAssign(shader: GlShader) = GL20C.glAttachShader(name, shader.name)
 
     var binary: ProgramBinary
     // --- [ glGetProgramBinary ] ---
@@ -103,7 +102,7 @@ inline class GlProgram(val name: Int) {
 
     infix fun detach(shader: GlShader) = GL20C.glDetachShader(name, shader.name)
 
-    operator fun minusAssign(shader: GlShader) = GL20C.glDetachShader(name, shader.name)
+    infix operator fun minusAssign(shader: GlShader) = GL20C.glDetachShader(name, shader.name)
 
     // --- [ glGetActiveAttrib ] ---
 
@@ -465,7 +464,8 @@ inline class GlProgram(val name: Int) {
 
     // --- [ glUseProgram ] ---
 
-    fun use() = gl.useProgram(this)
+    @JvmOverloads
+    fun use(use: Boolean = true) = GL20C.glUseProgram(if(use) name else 0)
 
     // JVM custom
     fun unuse() = gl.useProgram()

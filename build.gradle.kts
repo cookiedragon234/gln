@@ -16,7 +16,6 @@ val group = "com.github.kotlin_graphics"
 val moduleName = "$group.gln"
 val kotestVersion = "4.0.5"
 
-
 val kx = "com.github.kotlin-graphics"
 val unsignedVersion = "0af6fae4"
 val koolVersion = "3962a0be"
@@ -25,8 +24,8 @@ val gliVersion = "290b4a7f"
 val lwjglVersion = "3.2.3"
 val lwjglNatives = when (current()) {
     WINDOWS -> "windows"
-        LINUX -> "linux"
-        else -> "macos"
+    LINUX -> "linux"
+    else -> "macos"
 }
 
 repositories {
