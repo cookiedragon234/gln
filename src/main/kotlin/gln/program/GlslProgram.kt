@@ -1,14 +1,17 @@
 package gln.program
 
+import gln.Dsl
 import gln.checkError
 import gln.identifiers.GlProgram
 import gln.identifiers.GlShader
 import org.lwjgl.opengl.GL20C
+import java.io.File
 import java.io.FileNotFoundException
+import java.io.InputStream
 
 typealias Defines = MutableMap<String, String>
 
-fun Defines() = mutableMapOf<String, String>()
+fun Defines(): Defines = mutableMapOf()
 
 var activeProgram: GlslProgram? = null
 
@@ -19,9 +22,9 @@ var activeProgram: GlslProgram? = null
  * - quick uniforms store-and-use
  * - one instance to modify and re-use over and over again
  */
-open class GlslProgram(
-        @JvmField
-        var id: Int = -1) {
+open class GlslProgram {
+
+    var id: Int = -1
 
     /** combined shader program name */
     var name = "<uninitialized>"
@@ -34,9 +37,8 @@ open class GlslProgram(
 //    std::map<std::string, Location> attributes;
 //    std::map<std::string, UniformBlock> uniformBlocks
 
-//    static std::set<Shader*>* instances;
+    //    static std::set<Shader*>* instances;
 //    static std::map<GLuint, Shader*> instanceLookup;
-    val includeOverrides = mutableMapOf<String, String>()
 
     val dirs = ArrayList<String>()
     val contexts = ArrayList<Class<*>>()
@@ -52,7 +54,8 @@ open class GlslProgram(
     /** need to reload() before use()? */
     var dirty = true
     var compileError = ""
-//    GLuint getLoc(const std::string& name);
+
+    //    GLuint getLoc(const std::string& name);
 //    void preSet(const std::string& name);
 //    bool checkSet(const std::string& name, const std::string& type = "(whatever's correct)");
 //    void init(); //called from constructor
@@ -64,7 +67,7 @@ open class GlslProgram(
         if (name in includeOverrides) {
             //printf("Using internal %s\n", name.c_str());
             if (result && verbose)
-                println("WARNING: Shader $name is overidden internally")
+                println("WARNING: Shader $name is overridden internally")
             return name
         }
 
@@ -82,7 +85,9 @@ open class GlslProgram(
     val uniforms = HashMap<String, Int>()
     operator fun get(s: String): Int = uniforms.getOrPut(s) { GL20C.glGetUniformLocation(id, s) }
 
-    constructor(filename: String) : this() {
+    constructor()
+
+    constructor(filename: String) {
         name = filename
         vert = "$filename.vert"
         frag = "$filename.frag"
@@ -92,6 +97,7 @@ open class GlslProgram(
 
     /** contains concatenated errors from compiling shaders, if there were any */
     val errorStr = StringBuilder()
+
     /** uniforms/attributes with invalid locations */
     val variableError = hashSetOf<String>()
 
@@ -102,6 +108,7 @@ open class GlslProgram(
         dirty = false
 
         checkError()
+        println(File(".").absolutePath)
 
         //check the separate files exist
         vert = findFile(vert)
@@ -133,7 +140,7 @@ open class GlslProgram(
         assert(activeProgram == null) { "must unuse() previous shader before use()" }
 
         if (dirty)
-            reload();
+            reload()
 
 //        if (error())
 //            return false;
@@ -147,131 +154,100 @@ open class GlslProgram(
 
     fun use(block: ProgramUse.() -> Unit) = program.use(block)
 
+    // building utils
 
+    //returns a line from a source file, if available
+//    bool getFileLine(std::string file, int line, std::string& source);
 //
-//    constructor(vert: GlShader, frag: GlShader, block: GlProgram) : this() {
+//    //extracts file index and line number from log if possible. if errorStr is NULL, prints to stdout
+//    void parseLog(std::string* errorStr, std::string log, int baseFile, bool readLineNumbers);
 //
-//        attach(vert)
-//        attach(frag)
+//    //parses a shader source file, recursively loading #includes and replacing #defines
+//    bool parse(std::string file, FileBits& sourceBits, Defines& defs, std::vector<std::string> path = std::vector<std::string>());
 //
-//        link()
+//    //files that would normally be read from disk can be overridden with .include(<filename to override>, <file data>)
+//    //NOTE: the data pointer must remain valid until all compile() calls complete
+//    void include(std::string filename, const char* data);
 //
-//        if (!linkStatus)
-//            throw Exception("Linker failure: $infoLog")
+//    //if defs is not passed to ::compile(), the local ::defines is used instead. ::define() adds to the local ::defines
+//    void define(std::string def, std::string val);
+
+    //compiles a shader, returning true on success
+    fun compileAll(shader: String, defs: Defines = mutableMapOf()): List<String> =
+        xShaderExts.mapTo(ArrayList()) { compile(shader + it) }
+
+    fun compile(shader: String, defs: Defines = mutableMapOf()): String {
+TODO()
+    }
+
+//    //returns a list of all files compiled so far, including #included files
+//    std::vector<std::string> getReferences();
 //
-//        detach(vert)
-//        detach(frag)
-//        vert.delete()
-//        frag.delete()
-//    }
+//    //links all compiled shaders and returns the program.
+//    GLuint link(std::string* errStr = NULL);
 //
-//    constructor(vertSrc: String, fragSrc: String) : this() {
-//
-//        val v = GlShader.createFromSource(ShaderType.VERTEX_SHADER, vertSrc)
-//        val f = GlShader.createFromSource(ShaderType.FRAGMENT_SHADER, fragSrc)
-//
-//        attach(v)
-//        attach(f)
-//
-//        link()
-//
-//        if (!linkStatus)
-//            throw Exception("Linker failure: $infoLog")
-//
-//        detach(v)
-//        detach(f)
-//        v.delete()
-//        f.delete()
-//    }
-//
-//    constructor(vertSrc: String, geomSrc: String, fragSrc: String) : this() {
-//
-//        val v = GlShader.createFromSource(ShaderType.VERTEX_SHADER, vertSrc)
-//        val g = GlShader.createFromSource(ShaderType.GEOMETRY_SHADER, geomSrc)
-//        val f = GlShader.createFromSource(ShaderType.FRAGMENT_SHADER, fragSrc)
-//
-//        attach(v)
-//        attach(g)
-//        attach(f)
-//
-//        link()
-//
-//        if (!linkStatus)
-//            throw Exception("Linker failure: $infoLog")
-//
-//        detach(v)
-//        detach(g)
-//        detach(f)
-//        v.delete()
-//        g.delete()
-//        f.delete()
-//    }
-//
-//    // for Learn OpenGL
-//
-//    /** (root, vertex, fragment) or (vertex, fragment)  */
-//    /* constructor(context: Class<*>, vararg strings: String) {
-//
-//         val root =
-//                 if (strings[0].isShaderPath())
-//                     ""
-//                 else {
-//                     var r = strings[0]
-//                     if (r[0] != '/')
-//                         r = "/$r"
-//                     if (!r.endsWith('/'))
-//                         r = "$r/"
-//                     r
-//                 }
-//
-//         val (shaders, uniforms) = strings.drop(if (root.isEmpty()) 0 else 1).partition { it.isShaderPath() }
-//
-//         val shaderNames = shaders.map { createShaderFromPath(context, root + it) }.onEach { GL20.glAttachShader(name, it) }
-//
-//         GL20.glLinkProgram(name)
-//
-//         if (GL20.glGetProgrami(name, GL20.GL_LINK_STATUS) == GL11.GL_FALSE)
-//             System.err.println("Linker failure: ${GL20.glGetProgramInfoLog(name)}")
-//
-//         shaderNames.forEach {
-//             GL20.glDetachShader(name, it)
-//             GL20.glDeleteShader(it)
-//         }
-//
-//         uniforms.forEach {
-//             val i = GL20.glGetUniformLocation(name, it)
-//             if (i != -1)
-//                 this.uniforms[it] = i
-//             else
-//                 println("unable to find '$it' uniform location!")
-//         }
-//     }
-// */
-//
-//
-//
-//    // TODO remo?
-//    fun createProgram(shaderList: List<Int>): Int {
-//
-//        val program = GlslProgram()
-//
-//        shaderList.forEach { program += it }
-//
-//        program.link()
-//
-//        if (!program.linkStatus)
-//            throw Exception("Linker failure: ${program.infoLog}")
-//
-//        shaderList.forEach {
-//            program -= it
-//            GL20C.glDeleteShader(it)
-//        }
-//
-//        return program.id
-//    }
+//    //cleans up all variables, deletes shader objects etc.
+//    void cleanup();
 
     companion object {
 
+        val includeOverrides = mutableMapOf<String, String>()
+
+        fun from(dirs: List<String>, shader: String, defines: Defines): GlslProgram {
+
+            val shaderNames = arrayListOf<GlShader>()
+
+            val glslProgram = GlslProgram()
+            val program = glslProgram.program
+
+            var isGraphic = false
+            for (ext in xShaderExts)
+                try {
+                    isGraphic = true
+                    val stream = find(dirs, shader + ext)
+//                    val shaderName = GlShader.create(path = "$fullShader$ext")
+//                    program += shaderName
+//                    shaderNames += shaderName
+                } catch (exc: RuntimeException) {
+                    throw exc // propagate
+                } catch (exc: FileNotFoundException) {
+                    // silent ignore
+                }
+
+//            if (!isGraphic)
+//                program += GlShader.create(path = "$fullShader.comp")
+
+            program.link()
+
+            if (!program.linkStatus)
+                System.err.println("Linker failure: ${program.infoLog}")     // TODO change to exception
+
+            for (s in shaderNames) {
+                program -= s
+                s.delete()
+            }
+
+            return glslProgram
+        }
+
+        fun find(dirs: List<String>, shader: String): InputStream? {
+            for (dir in dirs) {
+                val d = when {
+                    dir.endsWith('\\') || dir.endsWith('/') -> dir
+                    else -> dir + File.pathSeparator
+                }
+                ClassLoader.getSystemResourceAsStream(d + shader)?.let { return it }
+            }
+            return null
+        }
+
         var verbose = true
+
+        //        private val shaderExtensions = arrayOf(".vert", ".tesc", ".tese", ".geom", ".frag", ".comp")
+        private val xShaderExts = arrayOf(".vert", ".tesc", ".tese", ".geom", ".frag")
+
+        // dsl
+        @Dsl
+        operator fun invoke(block: GlslProgram.() -> Unit): GlslProgram = GlslProgram().apply(block)
     }
 }

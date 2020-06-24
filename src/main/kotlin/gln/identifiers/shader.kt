@@ -6,7 +6,7 @@ import gln.NUL
 import gln.ShaderType
 import gln.gl
 import gln.program.Defines
-import org.lwjgl.opengl.*
+import org.lwjgl.opengl.GL20C
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.InputStream
@@ -67,23 +67,24 @@ inline class GlShader(val name: Int) {
             gl.specializeShader(this, entryPoint, pConstantIndex, pConstantValue)
 
     companion object {
+
         // --- [ glCreateShader ] ---
         fun create(type: ShaderType) = GlShader(GL20C.glCreateShader(type.i))
 
         @Throws(Exception::class)
-        fun createFromSource(type: ShaderType, sourceText: String) =
+        fun create(type: ShaderType, source: String): GlShader =
                 create(type).apply {
-                    source(sourceText)
+                    source(source)
                     compile()
                     require(compileStatus) { "glShader compile status false: $infoLog" }
                 }
 
-        fun createFromSource(type: ShaderType, sourceText: Array<String>) =
+        fun createFromSource(type: ShaderType, sourceText: Array<String>): Int =
                 create(type).apply {
                     source(*sourceText)
                     compile()
                     require(compileStatus) { "glShader compile status false: $infoLog" }
-                }
+                }.name
 
         @Throws(Exception::class)
         fun createFromPath(path: String, transform: ((String) -> String)?): GlShader {
@@ -91,7 +92,7 @@ inline class GlShader(val name: Int) {
         }
 
         @Throws(Exception::class)
-        fun createFromPath(path: String, defines: Map<String, String> = emptyMap()): GlShader {
+        fun create(path: String, defines: Defines = mutableMapOf()): GlShader {
 
             val lines = ClassLoader.getSystemResourceAsStream(path)?.use {
                 InputStreamReader(it).readLines()
@@ -105,13 +106,13 @@ inline class GlShader(val name: Int) {
                 } + '\n'
             }
 
-            return createFromSource(ShaderType(path.type), source)
+            return create(ShaderType(path), source)
         }
 
         @Throws(Exception::class)
-        fun createFromPath(context: Class<*>, path: String): Int {
+        fun createFromPath(context: Class<*>, path: String): GlShader {
 
-            val shader = GL20.glCreateShader(path.type)
+            val shader = create(path)
 
             val url = context::class.java.getResource(path)
             val lines = File(url.toURI()).readLines()
@@ -125,14 +126,11 @@ inline class GlShader(val name: Int) {
                 source += '\n'
             }
 
-            GL20.glShaderSource(shader, source)
+            shader.source(source)
 
-            GL20.glCompileShader(shader)
+            shader.compile()
 
-            val status = GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS)
-            require(status.bool) {
-                "Compiler failure in shader '${path.substringAfterLast('/')}'\n${GL20C.glGetShaderInfoLog(shader)}"
-            }
+            require(shader.compileStatus) { "Compiler failure in shader '${path.substringAfterLast('/')}'\n${shader.infoLog}" }
 
             return shader
         }
@@ -183,20 +181,31 @@ inline class GlShader(val name: Int) {
         fun readUncomment(input: InputStream): StringBuilder {
             val text = StringBuilder(input.reader().readText())
             var i = -1
-            fun p(d: Int = 0) = text[i + d]
+            fun p(d: Int = 0) = text.getOrElse(i + d) { NUL }
             while (++i < text.length) {
                 // remove block comments
-                if (p() == '*' && p(1) == '/') {
-                    val end = text.indexOf("*/", i)
-                    text.delete(i, end + 1)
+                if (p() == '/' && p(1) == '*') {
+                    var end = text.indexOf("*/", i) + 2
+                    if (text[end] == '\r') end++
+                    if (text[end] == '\n') end++
+                    text.delete(i, end)
                 }
                 //remove `//` comments
                 if (p() == '/' && p(1) == '/') {
-                    val start = i
-                    i += 2
-                    while (p() != '\n')
+                    var b = 1
+                    // delete any leading space, tab
+                    while (p(-b) == ' ' || p(-b) == '\t')
+                        b++
+                    // if just after a new line, delete that also
+                    if (p(-b) == '\n') b++
+                    if (p(-b) == '\r') b++
+                    val start = i - (b - 1)
+                    i += 2 // skip the two slashes
+                    while (p() != '\n' && p() != '\r')
                         i++
-                    text.delete(start, ++i)
+                    text.delete(start, i)
+                    // reset index
+                    i = start
                 }
             }
             return text
@@ -275,17 +284,6 @@ inline class GlShader(val name: Int) {
                 else -> filename to substring(start, end)
             }
         }
-
-        private val String.type: Int
-            get() = when (substringAfterLast('.')) {
-                "vert" -> GL20.GL_VERTEX_SHADER
-                "tesc" -> GL40.GL_TESS_CONTROL_SHADER
-                "tese" -> GL40.GL_TESS_EVALUATION_SHADER
-                "geom" -> GL32.GL_GEOMETRY_SHADER
-                "frag" -> GL20.GL_FRAGMENT_SHADER
-                "comp" -> GL43.GL_COMPUTE_SHADER
-                else -> error("invalid shader extension")
-            }
     }
 }
 

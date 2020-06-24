@@ -1,6 +1,5 @@
-package gln
+package gln.program
 
-import gln.program.GlslProgram
 import io.kotest.core.spec.style.StringSpec
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL
@@ -21,7 +20,7 @@ class ProgramTest : StringSpec() {
         glfwTerminate()
     }
 
-    val defs = mapOf(
+    val defs = mutableMapOf(
             "BLOCKSORT_BASE" to "0",
             "BLOCKSORT_GMEM" to "0",
             "BLOCKSORT_LMEM" to "0",
@@ -41,9 +40,13 @@ class ProgramTest : StringSpec() {
 
     init {
         "count" {
+            val shaderZeroes = GlslProgram("lfbZero")
             newCurrentContext {
-                val program = GlslProgram()
-//                GlslProgram.fromRoot("shaders", "phong", defines = defs)
+                shaderZeroes.reload()
+//                val program = GlslProgram {
+//                    dirs += listOf("oit/oit", "oit/pyarlib/shaders", "oit/lfb/shaders")
+//                    compile("phong", defs)
+//                }
             }
         }
     }

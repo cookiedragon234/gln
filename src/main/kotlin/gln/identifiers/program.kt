@@ -464,7 +464,7 @@ inline class GlProgram(val name: Int) {
 
     // --- [ glUseProgram ] ---
 
-    @JvmOverloads
+//    @JvmOverloads TODO bug https://youtrack.jetbrains.com/issue/IDEA-244289
     fun use(use: Boolean = true) = GL20C.glUseProgram(if(use) name else 0)
 
     // JVM custom
@@ -634,12 +634,12 @@ inline class GlProgram(val name: Int) {
             return ProgramBase.program
         }
 
-        /** for ogl-samples */
-        inline fun initFromPath(vertAndFrag: String, block: ProgramBase.() -> Unit = {}): GlProgram =
-                init(GlShader.createFromPath("$vertAndFrag.vert"), GlShader.createFromPath("$vertAndFrag.frag"), block)
-
-        inline fun initFromPath(vert: String, frag: String, block: ProgramBase.() -> Unit = {}): GlProgram =
-                init(GlShader.createFromPath(vert), GlShader.createFromPath(frag), block)
+//        /** for ogl-samples */
+//        inline fun initFromPath(vertAndFrag: String, block: ProgramBase.() -> Unit = {}): GlProgram =
+//                init(GlShader.createFromPath("$vertAndFrag.vert"), GlShader.createFromPath("$vertAndFrag.frag"), block)
+//
+//        inline fun initFromPath(vert: String, frag: String, block: ProgramBase.() -> Unit = {}): GlProgram =
+//                init(GlShader.createFromPath(vert), GlShader.createFromPath(frag), block)
 
         inline fun init(vert: GlShader, frag: GlShader, block: ProgramBase.() -> Unit = {}): GlProgram {
             ProgramBase.apply {

@@ -1,6 +1,5 @@
 package gln
 
-import glm_.BYTES
 import glm_.vec2.Vec2b
 import glm_.vec3.Vec3b
 import glm_.vec4.Vec4b
@@ -400,6 +399,7 @@ inline class ErrorCode(val i: Int) {
         val OUT_OF_MEMORY = ErrorCode(GL11.GL_OUT_OF_MEMORY)
         val TABLE_TOO_LARGE_EXT = ErrorCode(ARBImaging.GL_TABLE_TOO_LARGE)
         val TEXTURE_TOO_LARGE = ErrorCode(0x8065)
+
         //# Additional error codes
         //# VERSION_3_0 enum:
 //# ARB_framebuffer_object enum: (note: no ARB suffixes)
@@ -1124,11 +1124,12 @@ inline class HintMode(val i: Int) {
 
 inline class HintTarget(val i: Int) {
     companion object {
-//        val PERSPECTIVE_CORRECTION_HINT = HintTarget(GL11.GL_PERSPECTIVE_CORRECTION_HINT)
+        //        val PERSPECTIVE_CORRECTION_HINT = HintTarget(GL11.GL_PERSPECTIVE_CORRECTION_HINT)
 //        val POINT_SMOOTH_HINT = HintTarget(GL11.GL_POINT_SMOOTH_HINT)
         val LINE_SMOOTH = HintTarget(GL11.GL_LINE_SMOOTH_HINT)
         val POLYGON_SMOOTH = HintTarget(GL11.GL_POLYGON_SMOOTH_HINT)
-//        val FOG_HINT = HintTarget(GL11.GL_FOG_HINT)
+
+        //        val FOG_HINT = HintTarget(GL11.GL_FOG_HINT)
 //        val PACK_CMYK_HINT_EXT = HintTarget(0x800e)
 //        val UNPACK_CMYK_HINT_EXT = HintTarget(0x800f)
         val TEXTURE_COMPRESSION = HintTarget(GL13.GL_TEXTURE_COMPRESSION_HINT)
@@ -1211,6 +1212,7 @@ inline class DataType(val i: Int) {
         val _3_BYTES = DataType(GL11.GL_3_BYTES)
         val _4_BYTES = DataType(GL11.GL_4_BYTES)
         val DOUBLE = DataType(GL11.GL_DOUBLE)
+
         //# VERSION_3_0 enum:
 //# ARB_half_float_vertex enum: (note: no ARB suffixes)
 //# ARB_half_float_pixel enum:
@@ -5016,8 +5018,10 @@ inline class BufferTarget2(val i: Int) {
 inline class BufferAccess(val i: Int) {
     companion object {
         val READ_ONLY = BufferAccess(GL15.GL_READ_ONLY)
+
         //#	READ_ONLY_ARB					= 0x88B8
         val WRITE_ONLY = BufferAccess(GL15.GL_WRITE_ONLY)
+
         //#	WRITE_ONLY_ARB					= 0x88B9
         val READ_WRITE = BufferAccess(GL15.GL_READ_WRITE)
     }
@@ -6428,6 +6432,16 @@ inline class GetQueryObject(val i: Int) {
 
 //###############################################################################
 
+fun ShaderType(ext: String) = when (ext.substringAfterLast('.')) {
+    "vert" -> ShaderType.VERTEX_SHADER
+    "tesc" -> ShaderType.TESS_CONTROL_SHADER
+    "tese" -> ShaderType.TESS_EVALUATION_SHADER
+    "geom" -> ShaderType.GEOMETRY_SHADER
+    "frag" -> ShaderType.FRAGMENT_SHADER
+    "comp" -> ShaderType.COMPUTE_SHADER
+    else -> error("invalid shader extension")
+}
+
 inline class ShaderType(val i: Int) {
     companion object {
         val COMPUTE_SHADER = ShaderType(GL43.GL_COMPUTE_SHADER)
@@ -6725,6 +6739,7 @@ inline class FramebufferBindTarget(val i: Int) {
 inline class FramebufferTarget(val i: Int) {
     companion object {
         val READ = FramebufferTarget(GL30C.GL_READ_FRAMEBUFFER)
+
         /** GL_FRAMEBUFFER is equivalent to GL_DRAW_FRAMEBUFFER */
         val DRAW = FramebufferTarget(GL30C.GL_DRAW_FRAMEBUFFER)
     }
@@ -6798,6 +6813,7 @@ inline class State(val i: Int) {
         val TEXTURE_CUBE_MAP_SEAMLESS = State(GL32C.GL_TEXTURE_CUBE_MAP_SEAMLESS)
         val PROGRAM_POINT_SIZE = State(GL32C.GL_PROGRAM_POINT_SIZE)
     }
+
     operator fun plus(i: Int) = State(this.i + i)
 }
 
@@ -6980,6 +6996,7 @@ inline class TextureType2(val i: Int) {
         val UNSIGNED_INT_8_8_8_8_REV = TextureType2(GL44C.GL_UNSIGNED_INT_8_8_8_8_REV)
         val UNSIGNED_INT_10_10_10_2 = TextureType2(GL44C.GL_UNSIGNED_INT_10_10_10_2)
         val UNSIGNED_INT_2_10_10_10_REV = TextureType2(GL44C.GL_UNSIGNED_INT_2_10_10_10_REV)
+
         // news
         val UNSIGNED_INT_24_8 = TextureType2(GL44C.GL_UNSIGNED_INT_24_8)
         val UNSIGNED_INT_10F_11F_11F_REV = TextureType2(GL44C.GL_UNSIGNED_INT_10F_11F_11F_REV)
@@ -7044,6 +7061,7 @@ inline class SyncStatus(val i: Int) {
 inline class GetActiveSubroutineUniform(val i: Int) {
     companion object {
         val NUM_COMPATIBLE_SUBROUTINES = GetActiveSubroutineUniform(GL40C.GL_NUM_COMPATIBLE_SUBROUTINES)
+
         @Deprecated("use getActiveSubroutineUniformCompatibles instead")
         val COMPATIBLE_SUBROUTINES = GetActiveSubroutineUniform(GL40C.GL_COMPATIBLE_SUBROUTINES)
         val UNIFORM_SIZE = GetActiveSubroutineUniform(GL40C.GL_UNIFORM_SIZE)
